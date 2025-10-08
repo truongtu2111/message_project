@@ -141,10 +141,9 @@ func (s *Server) getSentMessages(c *gin.Context) {
 	})
 }
 
-// Start starts the HTTP server
-func (s *Server) Start(port string) error {
-	s.logger.Info("Starting HTTP server", "port", port)
-	return s.router.Run(":" + port)
+// ServeHTTP implements the http.Handler interface
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
 }
 
 // LoggerMiddleware creates a Gin middleware for structured logging

@@ -1,9 +1,3 @@
-// Package main Insider Messaging Service
-// @title Insider Messaging API
-// @version 1.0
-// @description A messaging service that processes and sends messages through webhooks with scheduling capabilities.
-// @host localhost:8080
-// @BasePath /
 package main
 
 import (
@@ -15,33 +9,61 @@ import (
 	"time"
 
 	"github.com/insider/insider-messaging/internal/api"
+	"github.com/insider/insider-messaging/internal/db"
 	"github.com/insider/insider-messaging/pkg/config"
 	"github.com/insider/insider-messaging/pkg/logger"
-	_ "github.com/insider/insider-messaging/docs" // Import for swagger docs
 )
 
+// @title Insider Messaging API
+// @version 1.0
+// @description A messaging service API for sending messages via webhooks
+// @host localhost:8080
+// @BasePath /
 func main() {
 	// Load configuration
 	cfg := config.Load()
 
 	// Initialize logger
-	appLogger := logger.New().WithComponent("main")
+	log := logger.New().WithComponent("main")
 
-	appLogger.Info("Starting Insider Messaging Service",
-		"port", cfg.Port,
-		"batch_size", cfg.BatchSize,
-		"interval", cfg.Interval,
-		"auto_start", cfg.AutoStart,
-	)
+	log.Info("Starting Insider Messaging Service", "version", "v0.1.0")
 
-	// Initialize HTTP server
-	server := api.NewServer(appLogger)
+	// Initialize database connection (optional for development)
+	var database *db.DB
+	if cfg.DatabaseURL != "" {
+		var err error
+		database, err = db.New(cfg.DatabaseURL)
+		if err != nil {
+			log.Warn("Failed to connect to database, running without database", "error", err)
+		} else {
+			defer database.Close()
+			log.Info("Connected to database successfully")
+
+			// Run database migrations
+			if err := database.RunMigrations(); err != nil {
+				log.Error("Failed to run database migrations", "error", err)
+				os.Exit(1)
+			}
+			log.Info("Database migrations completed successfully")
+		}
+	} else {
+		log.Info("No database URL configured, running without database")
+	}
+
+	// Create HTTP server
+	server := api.NewServer(log)
+
+	// Create HTTP server instance
+	httpServer := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: server,
+	}
 
 	// Start server in a goroutine
 	go func() {
-		appLogger.Info("HTTP server starting", "port", cfg.Port)
-		if err := server.Start(cfg.Port); err != nil && err != http.ErrServerClosed {
-			appLogger.Error("Failed to start server", "error", err)
+		log.Info("Starting HTTP server", "port", cfg.Port)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error("Failed to start server", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -51,14 +73,17 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	appLogger.Info("Shutting down server...")
+	log.Info("Shutting down server...")
 
-	// Give outstanding requests 30 seconds to complete
+	// Create a deadline for shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// TODO: Implement proper graceful shutdown when we have the server instance
-	_ = ctx
+	// Attempt graceful shutdown
+	if err := httpServer.Shutdown(ctx); err != nil {
+		log.Error("Server forced to shutdown", "error", err)
+		os.Exit(1)
+	}
 
-	appLogger.Info("Server shutdown complete")
+	log.Info("Server exited")
 }
