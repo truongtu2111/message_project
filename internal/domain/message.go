@@ -1,7 +1,13 @@
 package domain
 
 import (
+	"errors"
 	"time"
+)
+
+// Common errors
+var (
+	ErrMessageNotFound = errors.New("message not found")
 )
 
 // MessageStatus represents the status of a message

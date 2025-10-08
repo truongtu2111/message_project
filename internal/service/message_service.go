@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/insider/insider-messaging/internal/domain"
 	"github.com/insider/insider-messaging/internal/repo"
@@ -17,6 +18,9 @@ type MessageService interface {
 	// ProcessUnsentMessages processes unsent messages for delivery
 	ProcessUnsentMessages(ctx context.Context, batchSize int) (int, error)
 	
+	// ProcessPendingMessages processes pending messages (alias for ProcessUnsentMessages for scheduler compatibility)
+	ProcessPendingMessages(ctx context.Context) error
+	
 	// GetMessage retrieves a message by ID
 	GetMessage(ctx context.Context, messageID int64) (*domain.Message, error)
 	
@@ -26,18 +30,51 @@ type MessageService interface {
 	// RetryFailedMessages retries failed messages that haven't exceeded max retries
 	RetryFailedMessages(ctx context.Context, batchSize int) (int, error)
 }
-
 // messageService implements MessageService
 type messageService struct {
-	repo   repo.MessageRepository
-	logger *slog.Logger
+	repo          repo.MessageRepository
+	cache         *repo.RedisCacheRepository // Optional Redis cache
+	webhookClient WebhookClient              // Optional webhook client
+	logger        *slog.Logger
 }
 
-// NewMessageService creates a new message service
+// NewMessageService creates a new message service without cache or webhook client
 func NewMessageService(repo repo.MessageRepository, logger *slog.Logger) MessageService {
 	return &messageService{
-		repo:   repo,
-		logger: logger,
+		repo:          repo,
+		cache:         nil,
+		webhookClient: nil,
+		logger:        logger,
+	}
+}
+
+// NewMessageServiceWithCache creates a new message service with Redis cache
+func NewMessageServiceWithCache(repo repo.MessageRepository, cache *repo.RedisCacheRepository, logger *slog.Logger) MessageService {
+	return &messageService{
+		repo:          repo,
+		cache:         cache,
+		webhookClient: nil,
+		logger:        logger,
+	}
+}
+
+// NewMessageServiceWithWebhook creates a new message service with webhook client
+func NewMessageServiceWithWebhook(repo repo.MessageRepository, webhookClient WebhookClient, logger *slog.Logger) MessageService {
+	return &messageService{
+		repo:          repo,
+		cache:         nil,
+		webhookClient: webhookClient,
+		logger:        logger,
+	}
+}
+
+// NewMessageServiceWithCacheAndWebhook creates a new message service with both Redis cache and webhook client
+func NewMessageServiceWithCacheAndWebhook(repo repo.MessageRepository, cache *repo.RedisCacheRepository, webhookClient WebhookClient, logger *slog.Logger) MessageService {
+	return &messageService{
+		repo:          repo,
+		cache:         cache,
+		webhookClient: webhookClient,
+		logger:        logger,
 	}
 }
 
@@ -121,18 +158,55 @@ func (s *messageService) processMessage(ctx context.Context, message *domain.Mes
 		"retry_count", message.RetryCount,
 	)
 
-	// TODO: Implement actual webhook delivery logic
-	// For now, we'll simulate success/failure based on message content
-	// In a real implementation, this would make HTTP requests to the webhook URL
+	// Use webhook client if available, otherwise skip webhook delivery
+	if s.webhookClient != nil {
+		if err := s.webhookClient.SendMessage(ctx, message); err != nil {
+			s.logger.Error("Failed to send webhook",
+				"message_id", message.ID,
+				"webhook_url", message.WebhookURL,
+				"error", err,
+			)
+			
+			// Mark message as failed
+			if markErr := s.repo.MarkFailed(ctx, message.ID, err.Error()); markErr != nil {
+				s.logger.Error("Failed to mark message as failed",
+					"message_id", message.ID,
+					"error", markErr,
+				)
+				return fmt.Errorf("failed to mark message as failed: %w", markErr)
+			}
+			return fmt.Errorf("webhook delivery failed: %w", err)
+		}
+	} else {
+		s.logger.Debug("No webhook client configured, skipping webhook delivery",
+			"message_id", message.ID,
+		)
+	}
 	
-	// Simulate processing - mark as sent for now
-	// In production, this would involve:
-	// 1. Making HTTP request to webhook URL
-	// 2. Handling response codes and retries
-	// 3. Updating message status based on result
-	
+	// Mark message as sent
 	if err := s.repo.MarkSent(ctx, message.ID); err != nil {
 		return fmt.Errorf("failed to mark message as sent: %w", err)
+	}
+
+	// Cache message metadata if Redis cache is available
+	if s.cache != nil {
+		metadata := &repo.MessageMetadata{
+			ID:         int(message.ID),
+			Recipient:  message.Recipient,
+			Status:     "sent",
+			SentAt:     time.Now(),
+			RetryCount: message.RetryCount,
+			MaxRetries: message.MaxRetries,
+			WebhookURL: message.WebhookURL,
+		}
+		
+		if err := s.cache.CacheMessageMetadata(ctx, metadata); err != nil {
+			// Log error but don't fail the operation
+			s.logger.Warn("Failed to cache message metadata",
+				"message_id", message.ID,
+				"error", err,
+			)
+		}
 	}
 
 	s.logger.Info("Message processed successfully",
@@ -233,4 +307,22 @@ func (s *messageService) RetryFailedMessages(ctx context.Context, batchSize int)
 	)
 
 	return retried, nil
+}
+
+// ProcessPendingMessages processes pending messages (scheduler compatibility method)
+func (s *messageService) ProcessPendingMessages(ctx context.Context) error {
+	// Use a default batch size for scheduler processing
+	const defaultBatchSize = 10
+	
+	_, err := s.ProcessUnsentMessages(ctx, defaultBatchSize)
+	return err
+}
+
+// RetryFailedMessagesForScheduler retries failed messages (scheduler compatibility method)
+func (s *messageService) RetryFailedMessagesForScheduler(ctx context.Context) error {
+	// Use a default batch size for scheduler processing
+	const defaultBatchSize = 10
+	
+	_, err := s.RetryFailedMessages(ctx, defaultBatchSize)
+	return err
 }

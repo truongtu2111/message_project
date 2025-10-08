@@ -10,6 +10,9 @@ import (
 
 	"github.com/insider/insider-messaging/internal/api"
 	"github.com/insider/insider-messaging/internal/db"
+	"github.com/insider/insider-messaging/internal/repo"
+	"github.com/insider/insider-messaging/internal/scheduler"
+	"github.com/insider/insider-messaging/internal/service"
 	"github.com/insider/insider-messaging/pkg/config"
 	"github.com/insider/insider-messaging/pkg/logger"
 )
@@ -50,8 +53,37 @@ func main() {
 		log.Info("No database URL configured, running without database")
 	}
 
+	// Initialize message repository and service
+	var messageRepo repo.MessageRepository
+	var messageService service.MessageService
+
+	if database != nil {
+		log.Info("Using PostgreSQL database")
+		messageRepo = repo.NewMessageRepository(database.DB)
+		
+		// Try to initialize Redis cache
+		redisCache, err := repo.NewRedisCacheRepository(cfg.RedisURL, cfg.RedisTTL)
+		if err != nil {
+			log.Warn("Failed to connect to Redis, proceeding without cache", "error", err)
+			messageService = service.NewMessageService(messageRepo, log.Logger)
+		} else {
+			log.Info("Redis cache initialized successfully")
+			messageService = service.NewMessageServiceWithCache(messageRepo, redisCache, log.Logger)
+		}
+	} else {
+		// Use in-memory repository for development
+		log.Info("Using in-memory repository for development")
+		messageRepo = repo.NewInMemoryMessageRepository()
+		messageService = service.NewMessageService(messageRepo, log.Logger)
+	}
+
+	// Initialize scheduler with adapter
+	schedulerAdapter := service.NewSchedulerAdapter(messageService)
+	schedulerConfig := scheduler.DefaultConfig()
+	messageScheduler := scheduler.NewScheduler(schedulerAdapter, log, schedulerConfig)
+
 	// Create HTTP server
-	server := api.NewServer(log)
+	server := api.NewServer(log, messageService, messageScheduler)
 
 	// Create HTTP server instance
 	httpServer := &http.Server{

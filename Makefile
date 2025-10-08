@@ -84,3 +84,21 @@ compose-down: ## Stop services with docker-compose
 
 compose-logs: ## Show docker-compose logs
 	@docker-compose logs -f
+
+# Load testing targets
+.PHONY: load-test stress-test spike-test load-test-all
+load-test: ## Run k6 load tests
+	@echo "Running load tests..."
+	./scripts/run-load-tests.sh -t load
+
+stress-test: ## Run k6 stress tests
+	@echo "Running stress tests..."
+	./scripts/run-load-tests.sh -t stress
+
+spike-test: ## Run k6 spike tests
+	@echo "Running spike tests..."
+	./scripts/run-load-tests.sh -t spike
+
+load-test-all: ## Run all k6 load tests
+	@echo "Running all load tests..."
+	./scripts/run-load-tests.sh -t all
