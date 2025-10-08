@@ -1,5 +1,21 @@
 basePath: /
 definitions:
+  api.CreateMessageRequest:
+    properties:
+      content:
+        example: Hello, World!
+        type: string
+      recipient:
+        example: user@example.com
+        type: string
+      webhook_url:
+        example: https://example.com/webhook
+        type: string
+    required:
+    - content
+    - recipient
+    - webhook_url
+    type: object
   api.HealthResponse:
     properties:
       service:
@@ -12,14 +28,184 @@ definitions:
         example: v0.1.0
         type: string
     type: object
+  api.MessageResponse:
+    properties:
+      content:
+        example: Hello, World!
+        type: string
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      recipient:
+        example: user@example.com
+        type: string
+      sent_at:
+        example: "2023-01-01T00:01:00Z"
+        type: string
+      status:
+        example: sent
+        type: string
+      webhook_url:
+        example: https://example.com/webhook
+        type: string
+    type: object
+  api.PaginatedResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api.MessageResponse'
+        type: array
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  api.RetryRequest:
+    properties:
+      batch_size:
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact: {}
-  description: A messaging service that processes and sends messages through webhooks
-    with scheduling capabilities.
+  description: A messaging service API for sending messages via webhooks
   title: Insider Messaging API
   version: "1.0"
 paths:
+  /api/v1/messages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of messages with pagination
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get messages
+      tags:
+      - messages
+    post:
+      consumes:
+      - application/json
+      description: Creates a new message to be sent
+      parameters:
+      - description: Message data
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new message
+      tags:
+      - messages
+  /api/v1/messages/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a specific message by ID
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get a specific message
+      tags:
+      - messages
+  /api/v1/messages/retry:
+    post:
+      consumes:
+      - application/json
+      description: Retries all failed messages
+      parameters:
+      - description: Retry parameters
+        in: body
+        name: retry
+        schema:
+          $ref: '#/definitions/api.RetryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Retry failed messages
+      tags:
+      - messages
   /api/v1/messages/sent:
     get:
       consumes:
@@ -42,8 +228,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/api.PaginatedResponse'
       summary: Get sent messages
       tags:
       - messages
@@ -60,6 +245,11 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
       summary: Start the message scheduler
       tags:
       - scheduler
@@ -73,6 +263,11 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
           schema:
             additionalProperties: true
             type: object

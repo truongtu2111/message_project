@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/insider/insider-messaging/docs" // Import docs for swagger
 	"github.com/insider/insider-messaging/internal/api"
 	"github.com/insider/insider-messaging/internal/db"
 	"github.com/insider/insider-messaging/internal/repo"
