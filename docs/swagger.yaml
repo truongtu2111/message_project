@@ -1,0 +1,97 @@
+basePath: /
+definitions:
+  api.HealthResponse:
+    properties:
+      service:
+        example: insider-messaging
+        type: string
+      status:
+        example: ok
+        type: string
+      version:
+        example: v0.1.0
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A messaging service that processes and sends messages through webhooks
+    with scheduling capabilities.
+  title: Insider Messaging API
+  version: "1.0"
+paths:
+  /api/v1/messages/sent:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of sent messages with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get sent messages
+      tags:
+      - messages
+  /api/v1/scheduler/start:
+    post:
+      consumes:
+      - application/json
+      description: Starts the message processing scheduler
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Start the message scheduler
+      tags:
+      - scheduler
+  /api/v1/scheduler/stop:
+    post:
+      consumes:
+      - application/json
+      description: Stops the message processing scheduler
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Stop the message scheduler
+      tags:
+      - scheduler
+  /healthz:
+    get:
+      consumes:
+      - application/json
+      description: Returns the health status of the service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.HealthResponse'
+      summary: Health check endpoint
+      tags:
+      - health
+swagger: "2.0"
