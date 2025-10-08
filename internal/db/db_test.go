@@ -12,7 +12,7 @@ func TestNew_InvalidDatabaseURL(t *testing.T) {
 	
 	assert.Error(t, err)
 	assert.Nil(t, db)
-	assert.Contains(t, err.Error(), "failed to open database")
+	assert.Contains(t, err.Error(), "failed to ping database")
 }
 
 func TestNew_ValidDatabaseURL(t *testing.T) {
