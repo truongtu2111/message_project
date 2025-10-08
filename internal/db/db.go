@@ -5,8 +5,8 @@ import (
 	"embed"
 	"fmt"
 
-	"github.com/pressly/goose/v3"
 	_ "github.com/lib/pq" // PostgreSQL driver
+	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*.sql

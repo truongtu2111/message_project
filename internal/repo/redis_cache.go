@@ -11,13 +11,13 @@ import (
 
 // MessageMetadata represents cached metadata for sent messages
 type MessageMetadata struct {
-	ID          int       `json:"id"`
-	Recipient   string    `json:"recipient"`
-	Status      string    `json:"status"`
-	SentAt      time.Time `json:"sent_at"`
-	RetryCount  int       `json:"retry_count"`
-	MaxRetries  int       `json:"max_retries"`
-	WebhookURL  string    `json:"webhook_url"`
+	ID         int       `json:"id"`
+	Recipient  string    `json:"recipient"`
+	Status     string    `json:"status"`
+	SentAt     time.Time `json:"sent_at"`
+	RetryCount int       `json:"retry_count"`
+	MaxRetries int       `json:"max_retries"`
+	WebhookURL string    `json:"webhook_url"`
 }
 
 // RedisCacheRepository provides Redis-based caching for message metadata
@@ -52,7 +52,7 @@ func NewRedisCacheRepository(redisURL string, ttl time.Duration) (*RedisCacheRep
 // CacheMessageMetadata stores message metadata in Redis
 func (r *RedisCacheRepository) CacheMessageMetadata(ctx context.Context, metadata *MessageMetadata) error {
 	key := fmt.Sprintf("message:metadata:%d", metadata.ID)
-	
+
 	data, err := json.Marshal(metadata)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
@@ -68,7 +68,7 @@ func (r *RedisCacheRepository) CacheMessageMetadata(ctx context.Context, metadat
 // GetMessageMetadata retrieves message metadata from Redis
 func (r *RedisCacheRepository) GetMessageMetadata(ctx context.Context, messageID int) (*MessageMetadata, error) {
 	key := fmt.Sprintf("message:metadata:%d", messageID)
-	
+
 	data, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
@@ -88,7 +88,7 @@ func (r *RedisCacheRepository) GetMessageMetadata(ctx context.Context, messageID
 // DeleteMessageMetadata removes message metadata from Redis
 func (r *RedisCacheRepository) DeleteMessageMetadata(ctx context.Context, messageID int) error {
 	key := fmt.Sprintf("message:metadata:%d", messageID)
-	
+
 	if err := r.client.Del(ctx, key).Err(); err != nil {
 		return fmt.Errorf("failed to delete metadata from cache: %w", err)
 	}
@@ -99,7 +99,7 @@ func (r *RedisCacheRepository) DeleteMessageMetadata(ctx context.Context, messag
 // CacheRecentlySentMessages stores a list of recently sent message IDs
 func (r *RedisCacheRepository) CacheRecentlySentMessages(ctx context.Context, messageIDs []int) error {
 	key := "messages:recently_sent"
-	
+
 	// Convert IDs to strings for Redis list
 	values := make([]interface{}, len(messageIDs))
 	for i, id := range messageIDs {
@@ -113,7 +113,7 @@ func (r *RedisCacheRepository) CacheRecentlySentMessages(ctx context.Context, me
 		pipe.RPush(ctx, key, values...)
 		pipe.Expire(ctx, key, r.ttl)
 	}
-	
+
 	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to cache recently sent messages: %w", err)
@@ -125,7 +125,7 @@ func (r *RedisCacheRepository) CacheRecentlySentMessages(ctx context.Context, me
 // GetRecentlySentMessages retrieves recently sent message IDs from Redis
 func (r *RedisCacheRepository) GetRecentlySentMessages(ctx context.Context, limit int) ([]int, error) {
 	key := "messages:recently_sent"
-	
+
 	results, err := r.client.LRange(ctx, key, 0, int64(limit-1)).Result()
 	if err != nil {
 		if err == redis.Nil {

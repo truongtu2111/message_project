@@ -12,22 +12,22 @@ import (
 type MessageRepository interface {
 	// Create creates a new message in the database
 	Create(ctx context.Context, req *domain.CreateMessageRequest) (*domain.Message, error)
-	
+
 	// SelectUnsentForUpdate selects unsent messages for processing with row-level locking
 	SelectUnsentForUpdate(ctx context.Context, limit int) ([]*domain.Message, error)
-	
+
 	// MarkSent marks a message as sent
 	MarkSent(ctx context.Context, messageID int64) error
-	
+
 	// MarkFailed marks a message as failed with error details
 	MarkFailed(ctx context.Context, messageID int64, errorMsg string) error
-	
+
 	// GetByID retrieves a message by its ID
 	GetByID(ctx context.Context, messageID int64) (*domain.Message, error)
-	
+
 	// GetSentMessages retrieves sent messages with pagination
 	GetSentMessages(ctx context.Context, offset, limit int) ([]*domain.Message, int, error)
-	
+
 	// GetFailedMessages retrieves failed messages that can be retried
 	GetFailedMessages(ctx context.Context, limit int) ([]*domain.Message, error)
 }

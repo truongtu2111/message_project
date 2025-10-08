@@ -170,7 +170,7 @@ func TestMessageService_ProcessUnsentMessages(t *testing.T) {
 	t.Run("successful processing", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		messages := []*domain.Message{
 			{
 				ID:         1,
@@ -202,7 +202,7 @@ func TestMessageService_ProcessUnsentMessages(t *testing.T) {
 	t.Run("no messages found", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		mockRepo.On("SelectUnsentForUpdate", ctx, 10).Return([]*domain.Message{}, nil)
 
 		processed, err := service.ProcessUnsentMessages(ctx, 10)
@@ -215,7 +215,7 @@ func TestMessageService_ProcessUnsentMessages(t *testing.T) {
 	t.Run("repository error", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		mockRepo.On("SelectUnsentForUpdate", ctx, 10).Return(nil, errors.New("database error"))
 
 		processed, err := service.ProcessUnsentMessages(ctx, 10)
@@ -270,17 +270,17 @@ func TestMessageService_GetSentMessages(t *testing.T) {
 	t.Run("successful get sent messages", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		messages := []*domain.Message{
 			{
-				ID:         1,
-				Recipient:  "test1@example.com",
-				Status:     domain.MessageStatusSent,
+				ID:        1,
+				Recipient: "test1@example.com",
+				Status:    domain.MessageStatusSent,
 			},
 			{
-				ID:         2,
-				Recipient:  "test2@example.com",
-				Status:     domain.MessageStatusSent,
+				ID:        2,
+				Recipient: "test2@example.com",
+				Status:    domain.MessageStatusSent,
 			},
 		}
 
@@ -297,7 +297,7 @@ func TestMessageService_GetSentMessages(t *testing.T) {
 	t.Run("repository error", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		mockRepo.On("GetSentMessages", ctx, 0, 10).Return(([]*domain.Message)(nil), 0, errors.New("database error"))
 
 		result, total, err := service.GetSentMessages(ctx, 0, 10)
@@ -317,7 +317,7 @@ func TestMessageService_RetryFailedMessages(t *testing.T) {
 	t.Run("successful retry", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		messages := []*domain.Message{
 			{
 				ID:         1,
@@ -349,7 +349,7 @@ func TestMessageService_RetryFailedMessages(t *testing.T) {
 	t.Run("no failed messages", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		mockRepo.On("GetFailedMessages", ctx, 10).Return([]*domain.Message{}, nil)
 
 		retried, err := service.RetryFailedMessages(ctx, 10)
@@ -362,7 +362,7 @@ func TestMessageService_RetryFailedMessages(t *testing.T) {
 	t.Run("repository error", func(t *testing.T) {
 		mockRepo := new(MockMessageRepository)
 		service := NewMessageService(mockRepo, logger)
-		
+
 		mockRepo.On("GetFailedMessages", ctx, 10).Return(([]*domain.Message)(nil), errors.New("database error"))
 
 		retried, err := service.RetryFailedMessages(ctx, 10)

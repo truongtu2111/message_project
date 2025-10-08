@@ -30,10 +30,10 @@ func TestMessageRepository_Create(t *testing.T) {
 
 		now := time.Now()
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		}).AddRow(
-			1, req.Recipient, req.Content, req.WebhookURL, domain.MessageStatusPending, 
+			1, req.Recipient, req.Content, req.WebhookURL, domain.MessageStatusPending,
 			0, req.MaxRetries, now, now, nil, nil, nil,
 		)
 
@@ -67,10 +67,10 @@ func TestMessageRepository_Create(t *testing.T) {
 
 		now := time.Now()
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		}).AddRow(
-			1, req.Recipient, req.Content, req.WebhookURL, domain.MessageStatusPending, 
+			1, req.Recipient, req.Content, req.WebhookURL, domain.MessageStatusPending,
 			0, 3, now, now, nil, nil, nil,
 		)
 
@@ -97,13 +97,13 @@ func TestMessageRepository_SelectUnsentForUpdate(t *testing.T) {
 	t.Run("successful selection", func(t *testing.T) {
 		now := time.Now()
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		}).AddRow(
-			1, "test1@example.com", "Message 1", "https://example.com/webhook1", 
+			1, "test1@example.com", "Message 1", "https://example.com/webhook1",
 			domain.MessageStatusPending, 0, 3, now, now, nil, nil, nil,
 		).AddRow(
-			2, "test2@example.com", "Message 2", "https://example.com/webhook2", 
+			2, "test2@example.com", "Message 2", "https://example.com/webhook2",
 			domain.MessageStatusFailed, 1, 3, now, now, nil, now, "Previous error",
 		)
 
@@ -132,7 +132,7 @@ func TestMessageRepository_SelectUnsentForUpdate(t *testing.T) {
 
 	t.Run("no messages found", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		})
 
@@ -226,10 +226,10 @@ func TestMessageRepository_GetByID(t *testing.T) {
 		now := time.Now()
 		sentAt := now.Add(time.Hour)
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		}).AddRow(
-			1, "test@example.com", "Test message", "https://example.com/webhook", 
+			1, "test@example.com", "Test message", "https://example.com/webhook",
 			domain.MessageStatusSent, 0, 3, now, now, sentAt, nil, nil,
 		)
 
@@ -281,13 +281,13 @@ func TestMessageRepository_GetSentMessages(t *testing.T) {
 		now := time.Now()
 		sentAt := now.Add(time.Hour)
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		}).AddRow(
-			1, "test1@example.com", "Message 1", "https://example.com/webhook1", 
+			1, "test1@example.com", "Message 1", "https://example.com/webhook1",
 			domain.MessageStatusSent, 0, 3, now, now, sentAt, nil, nil,
 		).AddRow(
-			2, "test2@example.com", "Message 2", "https://example.com/webhook2", 
+			2, "test2@example.com", "Message 2", "https://example.com/webhook2",
 			domain.MessageStatusSent, 0, 3, now, now, sentAt, nil, nil,
 		)
 
@@ -319,13 +319,13 @@ func TestMessageRepository_GetFailedMessages(t *testing.T) {
 		failedAt := now.Add(time.Hour)
 		errorMsg := "Connection timeout"
 		rows := sqlmock.NewRows([]string{
-			"id", "recipient", "content", "webhook_url", "status", "retry_count", 
+			"id", "recipient", "content", "webhook_url", "status", "retry_count",
 			"max_retries", "created_at", "updated_at", "sent_at", "failed_at", "error_message",
 		}).AddRow(
-			1, "test1@example.com", "Message 1", "https://example.com/webhook1", 
+			1, "test1@example.com", "Message 1", "https://example.com/webhook1",
 			domain.MessageStatusFailed, 1, 3, now, now, nil, failedAt, errorMsg,
 		).AddRow(
-			2, "test2@example.com", "Message 2", "https://example.com/webhook2", 
+			2, "test2@example.com", "Message 2", "https://example.com/webhook2",
 			domain.MessageStatusFailed, 2, 3, now, now, nil, failedAt, errorMsg,
 		)
 

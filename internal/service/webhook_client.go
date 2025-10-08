@@ -28,12 +28,12 @@ type webhookClient struct {
 
 // WebhookPayload represents the payload sent to webhook URLs
 type WebhookPayload struct {
-	MessageID   int64     `json:"message_id"`
-	Recipient   string    `json:"recipient"`
-	Content     string    `json:"content"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	SentAt      time.Time `json:"sent_at"`
+	MessageID int64     `json:"message_id"`
+	Recipient string    `json:"recipient"`
+	Content   string    `json:"content"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	SentAt    time.Time `json:"sent_at"`
 }
 
 // NewWebhookClient creates a new webhook client
@@ -89,15 +89,15 @@ func (w *webhookClient) sendHTTPRequest(ctx context.Context, webhookURL string, 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "insider-messaging/1.0")
 
-	w.logger.Debug("Sending webhook request", 
-		"url", webhookURL, 
+	w.logger.Debug("Sending webhook request",
+		"url", webhookURL,
 		"message_id", payload.MessageID,
 		"recipient", payload.Recipient)
 
 	resp, err := w.httpClient.Do(req)
 	if err != nil {
-		w.logger.Error("HTTP request failed", 
-			"url", webhookURL, 
+		w.logger.Error("HTTP request failed",
+			"url", webhookURL,
 			"error", err,
 			"message_id", payload.MessageID)
 		return retry.RetryableError(fmt.Errorf("HTTP request failed: %w", err))
@@ -106,8 +106,8 @@ func (w *webhookClient) sendHTTPRequest(ctx context.Context, webhookURL string, 
 
 	// Read response body for logging
 	body, _ := io.ReadAll(resp.Body)
-	
-	w.logger.Debug("Webhook response received", 
+
+	w.logger.Debug("Webhook response received",
 		"url", webhookURL,
 		"status_code", resp.StatusCode,
 		"message_id", payload.MessageID,
@@ -116,39 +116,39 @@ func (w *webhookClient) sendHTTPRequest(ctx context.Context, webhookURL string, 
 	// Handle different HTTP status codes according to the commit plan
 	switch {
 	case resp.StatusCode == http.StatusAccepted: // 202 - Success
-		w.logger.Info("Webhook delivered successfully", 
-			"url", webhookURL, 
+		w.logger.Info("Webhook delivered successfully",
+			"url", webhookURL,
 			"message_id", payload.MessageID)
 		return nil
-		
+
 	case resp.StatusCode >= 400 && resp.StatusCode < 500: // 4xx - Non-retryable
-		w.logger.Error("Webhook delivery failed with client error", 
+		w.logger.Error("Webhook delivery failed with client error",
 			"url", webhookURL,
 			"status_code", resp.StatusCode,
 			"message_id", payload.MessageID,
 			"response_body", string(body))
 		return fmt.Errorf("webhook delivery failed with status %d: %s", resp.StatusCode, string(body))
-		
+
 	case resp.StatusCode >= 500: // 5xx - Retryable
-		w.logger.Warn("Webhook delivery failed with server error, will retry", 
+		w.logger.Warn("Webhook delivery failed with server error, will retry",
 			"url", webhookURL,
 			"status_code", resp.StatusCode,
 			"message_id", payload.MessageID,
 			"response_body", string(body))
 		return retry.RetryableError(fmt.Errorf("webhook delivery failed with status %d: %s", resp.StatusCode, string(body)))
-		
+
 	default:
 		// Other 2xx codes (200, 201, etc.) are also considered success
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			w.logger.Info("Webhook delivered successfully", 
-				"url", webhookURL, 
+			w.logger.Info("Webhook delivered successfully",
+				"url", webhookURL,
 				"status_code", resp.StatusCode,
 				"message_id", payload.MessageID)
 			return nil
 		}
-		
+
 		// Unexpected status codes
-		w.logger.Error("Webhook delivery failed with unexpected status", 
+		w.logger.Error("Webhook delivery failed with unexpected status",
 			"url", webhookURL,
 			"status_code", resp.StatusCode,
 			"message_id", payload.MessageID,

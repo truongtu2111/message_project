@@ -61,7 +61,7 @@ func main() {
 	if database != nil {
 		log.Info("Using PostgreSQL database")
 		messageRepo = repo.NewMessageRepository(database.DB)
-		
+
 		// Try to initialize Redis cache
 		redisCache, err := repo.NewRedisCacheRepository(cfg.RedisURL, cfg.RedisTTL)
 		if err != nil {

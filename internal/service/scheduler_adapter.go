@@ -25,7 +25,7 @@ func (a *SchedulerAdapter) ProcessPendingMessages(ctx context.Context) error {
 func (a *SchedulerAdapter) RetryFailedMessages(ctx context.Context) error {
 	// Use a default batch size for scheduler processing
 	const defaultBatchSize = 10
-	
+
 	_, err := a.messageService.RetryFailedMessages(ctx, defaultBatchSize)
 	return err
 }

@@ -14,13 +14,13 @@ import (
 func TestNew(t *testing.T) {
 	// Create a new registry for this test
 	registry := prometheus.NewRegistry()
-	
+
 	m := NewWithRegistry(registry)
-	
+
 	if m == nil {
 		t.Fatal("Expected metrics instance, got nil")
 	}
-	
+
 	// Test that all metrics are initialized
 	if m.MessagesTotal == nil {
 		t.Error("MessagesTotal not initialized")
@@ -75,24 +75,24 @@ func TestNew(t *testing.T) {
 func TestHandler(t *testing.T) {
 	// Use default registry for this test since handler uses default gatherer
 	m := New()
-	
+
 	// Record some metrics first to ensure they appear in output
 	m.RecordMessageStatus("pending")
-	
+
 	handler := m.Handler()
 	if handler == nil {
 		t.Fatal("Expected HTTP handler, got nil")
 	}
-	
+
 	// Test that handler serves metrics
 	req := httptest.NewRequest("GET", "/metrics", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
-	
+
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
-	
+
 	body := w.Body.String()
 	if !strings.Contains(body, "insider_messaging") {
 		t.Errorf("Expected metrics output to contain 'insider_messaging', got: %s", body)
@@ -102,11 +102,11 @@ func TestHandler(t *testing.T) {
 func TestRecordMessageProcessed(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	// Record a successful message processing
 	duration := 100 * time.Millisecond
 	m.RecordMessageProcessed("success", duration)
-	
+
 	// Check counter
 	expected := `
 		# HELP insider_messaging_messages_processed_total Total number of messages processed by result
@@ -116,7 +116,7 @@ func TestRecordMessageProcessed(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(expected), "insider_messaging_messages_processed_total"); err != nil {
 		t.Errorf("Unexpected metric value: %v", err)
 	}
-	
+
 	// Check histogram
 	histogramExpected := `
 		# HELP insider_messaging_message_processing_duration_seconds Time spent processing messages
@@ -144,11 +144,11 @@ func TestRecordMessageProcessed(t *testing.T) {
 func TestRecordMessageStatus(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	m.RecordMessageStatus("pending")
 	m.RecordMessageStatus("sent")
 	m.RecordMessageStatus("failed")
-	
+
 	expected := `
 		# HELP insider_messaging_messages_total Total number of messages processed by status
 		# TYPE insider_messaging_messages_total counter
@@ -164,10 +164,10 @@ func TestRecordMessageStatus(t *testing.T) {
 func TestRecordWebhookRequest(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	duration := 250 * time.Millisecond
 	m.RecordWebhookRequest("200", duration)
-	
+
 	// Check counter
 	counterExpected := `
 		# HELP insider_messaging_webhook_requests_total Total number of webhook requests by status code
@@ -177,7 +177,7 @@ func TestRecordWebhookRequest(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(counterExpected), "insider_messaging_webhook_requests_total"); err != nil {
 		t.Errorf("Unexpected counter metric value: %v", err)
 	}
-	
+
 	// Check histogram
 	histogramExpected := `
 		# HELP insider_messaging_webhook_request_duration_seconds Time spent on webhook requests
@@ -201,10 +201,10 @@ func TestRecordWebhookRequest(t *testing.T) {
 func TestRecordWebhookRetry(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	m.RecordWebhookRetry("timeout")
 	m.RecordWebhookRetry("server_error")
-	
+
 	expected := `
 		# HELP insider_messaging_webhook_retries_total Total number of webhook retry attempts
 		# TYPE insider_messaging_webhook_retries_total counter
@@ -219,10 +219,10 @@ func TestRecordWebhookRetry(t *testing.T) {
 func TestRecordDatabaseQuery(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	duration := 5 * time.Millisecond
 	m.RecordDatabaseQuery("select", "success", duration)
-	
+
 	// Check counter
 	counterExpected := `
 		# HELP insider_messaging_database_queries_total Total number of database queries by operation and result
@@ -232,7 +232,7 @@ func TestRecordDatabaseQuery(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(counterExpected), "insider_messaging_database_queries_total"); err != nil {
 		t.Errorf("Unexpected counter metric value: %v", err)
 	}
-	
+
 	// Check histogram
 	histogramExpected := `
 		# HELP insider_messaging_database_query_duration_seconds Time spent on database queries
@@ -257,11 +257,11 @@ func TestRecordDatabaseQuery(t *testing.T) {
 func TestRecordCacheOperations(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	duration := 2 * time.Millisecond
 	m.RecordCacheHit("get", duration)
 	m.RecordCacheMiss("get")
-	
+
 	// Check cache hits
 	hitsExpected := `
 		# HELP insider_messaging_cache_hits_total Total number of cache hits
@@ -271,7 +271,7 @@ func TestRecordCacheOperations(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(hitsExpected), "insider_messaging_cache_hits_total"); err != nil {
 		t.Errorf("Unexpected cache hits metric value: %v", err)
 	}
-	
+
 	// Check cache misses
 	missesExpected := `
 		# HELP insider_messaging_cache_misses_total Total number of cache misses
@@ -286,10 +286,10 @@ func TestRecordCacheOperations(t *testing.T) {
 func TestRecordHTTPRequest(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	duration := 50 * time.Millisecond
 	m.RecordHTTPRequest("POST", "200", "/api/messages", duration)
-	
+
 	// Check counter
 	counterExpected := `
 		# HELP insider_messaging_http_requests_total Total number of HTTP requests by method and status code
@@ -299,7 +299,7 @@ func TestRecordHTTPRequest(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(counterExpected), "insider_messaging_http_requests_total"); err != nil {
 		t.Errorf("Unexpected counter metric value: %v", err)
 	}
-	
+
 	// Check histogram
 	histogramExpected := `
 		# HELP insider_messaging_http_request_duration_seconds Time spent on HTTP requests
@@ -325,12 +325,12 @@ func TestRecordHTTPRequest(t *testing.T) {
 func TestGaugeMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	m := NewWithRegistry(registry)
-	
+
 	// Test setting gauge values
 	m.SetMessagesInQueue(42)
 	m.SetDatabaseConnections(10)
 	m.SetActiveConnections(5)
-	
+
 	// Check messages in queue
 	queueExpected := `
 		# HELP insider_messaging_messages_in_queue Current number of messages in queue
@@ -340,7 +340,7 @@ func TestGaugeMetrics(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(queueExpected), "insider_messaging_messages_in_queue"); err != nil {
 		t.Errorf("Unexpected queue metric value: %v", err)
 	}
-	
+
 	// Check database connections
 	dbExpected := `
 		# HELP insider_messaging_database_connections_active Number of active database connections
@@ -350,7 +350,7 @@ func TestGaugeMetrics(t *testing.T) {
 	if err := testutil.GatherAndCompare(registry, strings.NewReader(dbExpected), "insider_messaging_database_connections_active"); err != nil {
 		t.Errorf("Unexpected database connections metric value: %v", err)
 	}
-	
+
 	// Check active connections
 	activeExpected := `
 		# HELP insider_messaging_active_connections Number of active HTTP connections

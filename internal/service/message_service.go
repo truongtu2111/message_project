@@ -14,22 +14,23 @@ import (
 type MessageService interface {
 	// CreateMessage creates a new message
 	CreateMessage(ctx context.Context, req *domain.CreateMessageRequest) (*domain.Message, error)
-	
+
 	// ProcessUnsentMessages processes unsent messages for delivery
 	ProcessUnsentMessages(ctx context.Context, batchSize int) (int, error)
-	
+
 	// ProcessPendingMessages processes pending messages (alias for ProcessUnsentMessages for scheduler compatibility)
 	ProcessPendingMessages(ctx context.Context) error
-	
+
 	// GetMessage retrieves a message by ID
 	GetMessage(ctx context.Context, messageID int64) (*domain.Message, error)
-	
+
 	// GetSentMessages retrieves sent messages with pagination
 	GetSentMessages(ctx context.Context, offset, limit int) ([]*domain.Message, int, error)
-	
+
 	// RetryFailedMessages retries failed messages that haven't exceeded max retries
 	RetryFailedMessages(ctx context.Context, batchSize int) (int, error)
 }
+
 // messageService implements MessageService
 type messageService struct {
 	repo          repo.MessageRepository
@@ -166,7 +167,7 @@ func (s *messageService) processMessage(ctx context.Context, message *domain.Mes
 				"webhook_url", message.WebhookURL,
 				"error", err,
 			)
-			
+
 			// Mark message as failed
 			if markErr := s.repo.MarkFailed(ctx, message.ID, err.Error()); markErr != nil {
 				s.logger.Error("Failed to mark message as failed",
@@ -182,7 +183,7 @@ func (s *messageService) processMessage(ctx context.Context, message *domain.Mes
 			"message_id", message.ID,
 		)
 	}
-	
+
 	// Mark message as sent
 	if err := s.repo.MarkSent(ctx, message.ID); err != nil {
 		return fmt.Errorf("failed to mark message as sent: %w", err)
@@ -199,7 +200,7 @@ func (s *messageService) processMessage(ctx context.Context, message *domain.Mes
 			MaxRetries: message.MaxRetries,
 			WebhookURL: message.WebhookURL,
 		}
-		
+
 		if err := s.cache.CacheMessageMetadata(ctx, metadata); err != nil {
 			// Log error but don't fail the operation
 			s.logger.Warn("Failed to cache message metadata",
@@ -313,7 +314,7 @@ func (s *messageService) RetryFailedMessages(ctx context.Context, batchSize int)
 func (s *messageService) ProcessPendingMessages(ctx context.Context) error {
 	// Use a default batch size for scheduler processing
 	const defaultBatchSize = 10
-	
+
 	_, err := s.ProcessUnsentMessages(ctx, defaultBatchSize)
 	return err
 }
@@ -322,7 +323,7 @@ func (s *messageService) ProcessPendingMessages(ctx context.Context) error {
 func (s *messageService) RetryFailedMessagesForScheduler(ctx context.Context) error {
 	// Use a default batch size for scheduler processing
 	const defaultBatchSize = 10
-	
+
 	_, err := s.RetryFailedMessages(ctx, defaultBatchSize)
 	return err
 }

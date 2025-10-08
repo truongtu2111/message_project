@@ -11,30 +11,30 @@ import (
 // Metrics holds all the Prometheus metrics
 type Metrics struct {
 	// Message metrics
-	MessagesTotal        *prometheus.CounterVec
-	MessagesProcessed    *prometheus.CounterVec
+	MessagesTotal             *prometheus.CounterVec
+	MessagesProcessed         *prometheus.CounterVec
 	MessageProcessingDuration *prometheus.HistogramVec
-	MessagesInQueue      prometheus.Gauge
-	
+	MessagesInQueue           prometheus.Gauge
+
 	// Webhook metrics
-	WebhookRequestsTotal    *prometheus.CounterVec
-	WebhookRequestDuration  *prometheus.HistogramVec
-	WebhookRetries          *prometheus.CounterVec
-	
+	WebhookRequestsTotal   *prometheus.CounterVec
+	WebhookRequestDuration *prometheus.HistogramVec
+	WebhookRetries         *prometheus.CounterVec
+
 	// Database metrics
 	DatabaseConnectionsActive prometheus.Gauge
 	DatabaseQueryDuration     *prometheus.HistogramVec
 	DatabaseQueriesTotal      *prometheus.CounterVec
-	
+
 	// Cache metrics
-	CacheHitsTotal   *prometheus.CounterVec
-	CacheMissesTotal *prometheus.CounterVec
+	CacheHitsTotal         *prometheus.CounterVec
+	CacheMissesTotal       *prometheus.CounterVec
 	CacheOperationDuration *prometheus.HistogramVec
-	
+
 	// System metrics
-	HTTPRequestsTotal    *prometheus.CounterVec
-	HTTPRequestDuration  *prometheus.HistogramVec
-	ActiveConnections    prometheus.Gauge
+	HTTPRequestsTotal   *prometheus.CounterVec
+	HTTPRequestDuration *prometheus.HistogramVec
+	ActiveConnections   prometheus.Gauge
 }
 
 // New creates a new Metrics instance with all Prometheus metrics
@@ -53,7 +53,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"status"}, // pending, sent, failed
 		),
-		
+
 		MessagesProcessed: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "insider_messaging_messages_processed_total",
@@ -61,7 +61,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"result"}, // success, error
 		),
-		
+
 		MessageProcessingDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "insider_messaging_message_processing_duration_seconds",
@@ -70,14 +70,14 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"operation"}, // process, retry
 		),
-		
+
 		MessagesInQueue: prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "insider_messaging_messages_in_queue",
 				Help: "Current number of messages in queue",
 			},
 		),
-		
+
 		// Webhook metrics
 		WebhookRequestsTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -86,7 +86,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"status_code"},
 		),
-		
+
 		WebhookRequestDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "insider_messaging_webhook_request_duration_seconds",
@@ -95,7 +95,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"status_code"},
 		),
-		
+
 		WebhookRetries: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "insider_messaging_webhook_retries_total",
@@ -103,7 +103,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"reason"}, // timeout, server_error, client_error
 		),
-		
+
 		// Database metrics
 		DatabaseConnectionsActive: prometheus.NewGauge(
 			prometheus.GaugeOpts{
@@ -111,7 +111,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 				Help: "Number of active database connections",
 			},
 		),
-		
+
 		DatabaseQueryDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "insider_messaging_database_query_duration_seconds",
@@ -120,7 +120,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"operation"}, // select, insert, update, delete
 		),
-		
+
 		DatabaseQueriesTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "insider_messaging_database_queries_total",
@@ -128,7 +128,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"operation", "result"}, // operation: select/insert/update/delete, result: success/error
 		),
-		
+
 		// Cache metrics
 		CacheHitsTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -137,7 +137,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"operation"}, // get, set, delete
 		),
-		
+
 		CacheMissesTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "insider_messaging_cache_misses_total",
@@ -145,7 +145,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"operation"}, // get
 		),
-		
+
 		CacheOperationDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "insider_messaging_cache_operation_duration_seconds",
@@ -154,7 +154,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"operation"}, // get, set, delete
 		),
-		
+
 		// System metrics
 		HTTPRequestsTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -163,7 +163,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"method", "status_code", "endpoint"},
 		),
-		
+
 		HTTPRequestDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "insider_messaging_http_request_duration_seconds",
@@ -172,7 +172,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 			[]string{"method", "endpoint"},
 		),
-		
+
 		ActiveConnections: prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "insider_messaging_active_connections",
@@ -180,7 +180,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 			},
 		),
 	}
-	
+
 	// Register all metrics with Prometheus
 	registerer.MustRegister(
 		m.MessagesTotal,
@@ -200,7 +200,7 @@ func NewWithRegistry(registerer prometheus.Registerer) *Metrics {
 		m.HTTPRequestDuration,
 		m.ActiveConnections,
 	)
-	
+
 	return m
 }
 

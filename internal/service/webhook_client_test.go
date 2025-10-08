@@ -43,7 +43,7 @@ func TestWebhookClient_SendMessage(t *testing.T) {
 				// Verify request headers
 				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 				assert.Equal(t, "insider-messaging/1.0", r.Header.Get("User-Agent"))
-				
+
 				// Verify payload
 				var payload WebhookPayload
 				err := json.NewDecoder(r.Body).Decode(&payload)
@@ -51,7 +51,7 @@ func TestWebhookClient_SendMessage(t *testing.T) {
 				assert.Equal(t, int64(1), payload.MessageID)
 				assert.Equal(t, "test@example.com", payload.Recipient)
 				assert.Equal(t, "Test message", payload.Content)
-				
+
 				w.WriteHeader(http.StatusAccepted)
 				w.Write([]byte(`{"status": "accepted"}`))
 			},
@@ -136,7 +136,7 @@ func TestWebhookClient_SendMessage(t *testing.T) {
 			}
 
 			client := NewWebhookClient(cfg, log)
-			
+
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
@@ -175,7 +175,7 @@ func TestWebhookClient_SendMessage_Timeout(t *testing.T) {
 	}
 
 	client := NewWebhookClient(cfg, log)
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -186,7 +186,7 @@ func TestWebhookClient_SendMessage_Timeout(t *testing.T) {
 
 func TestWebhookClient_SendMessage_RetryLogic(t *testing.T) {
 	cfg := &config.Config{
-		BackoffMin: 10 * time.Millisecond,  // Very short for testing
+		BackoffMin: 10 * time.Millisecond, // Very short for testing
 		BackoffMax: 100 * time.Millisecond,
 	}
 	log := logger.New().WithComponent("webhook-test")
@@ -216,7 +216,7 @@ func TestWebhookClient_SendMessage_RetryLogic(t *testing.T) {
 	}
 
 	client := NewWebhookClient(cfg, log)
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

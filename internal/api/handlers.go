@@ -28,7 +28,7 @@ func NewServer(log *logger.Logger, messageService service.MessageService, sched 
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.New()
-	
+
 	// Add middleware
 	router.Use(gin.Recovery())
 	router.Use(LoggerMiddleware(log))
@@ -63,14 +63,14 @@ func (s *Server) setupRoutes() {
 		}
 
 		// Messages routes (to be implemented)
-	messages := v1.Group("/messages")
-	{
-		messages.POST("", s.createMessage)
-		messages.GET("", s.getMessages)
-		messages.GET("/:id", s.getMessage)
-		messages.GET("/sent", s.getSentMessages)
-		messages.POST("/retry", s.retryFailedMessages)
-	}
+		messages := v1.Group("/messages")
+		{
+			messages.POST("", s.createMessage)
+			messages.GET("", s.getMessages)
+			messages.GET("/:id", s.getMessage)
+			messages.GET("/sent", s.getSentMessages)
+			messages.POST("/retry", s.retryFailedMessages)
+		}
 	}
 }
 
@@ -121,7 +121,7 @@ func (s *Server) startScheduler(c *gin.Context) {
 	if s.scheduler.IsRunning() {
 		s.logger.Warn("Scheduler is already running")
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Scheduler is already running",
+			"error":  "Scheduler is already running",
 			"status": s.scheduler.GetStatus(),
 		})
 		return
@@ -130,7 +130,7 @@ func (s *Server) startScheduler(c *gin.Context) {
 	if err := s.scheduler.Start(c.Request.Context()); err != nil {
 		s.logger.Error("Failed to start scheduler", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to start scheduler",
+			"error":   "Failed to start scheduler",
 			"details": err.Error(),
 		})
 		return
@@ -139,7 +139,7 @@ func (s *Server) startScheduler(c *gin.Context) {
 	s.logger.Info("Scheduler started successfully")
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Scheduler started successfully",
-		"status": s.scheduler.GetStatus(),
+		"status":  s.scheduler.GetStatus(),
 	})
 }
 
@@ -164,7 +164,7 @@ func (s *Server) stopScheduler(c *gin.Context) {
 	if !s.scheduler.IsRunning() {
 		s.logger.Warn("Scheduler is not running")
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Scheduler is not running",
+			"error":  "Scheduler is not running",
 			"status": s.scheduler.GetStatus(),
 		})
 		return
@@ -173,7 +173,7 @@ func (s *Server) stopScheduler(c *gin.Context) {
 	if err := s.scheduler.Stop(); err != nil {
 		s.logger.Error("Failed to stop scheduler", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to stop scheduler",
+			"error":   "Failed to stop scheduler",
 			"details": err.Error(),
 		})
 		return
@@ -182,7 +182,7 @@ func (s *Server) stopScheduler(c *gin.Context) {
 	s.logger.Info("Scheduler stopped successfully")
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Scheduler stopped successfully",
-		"status": s.scheduler.GetStatus(),
+		"status":  s.scheduler.GetStatus(),
 	})
 }
 
@@ -195,12 +195,12 @@ type CreateMessageRequest struct {
 
 // MessageResponse represents a message in API responses
 type MessageResponse struct {
-	ID         int64  `json:"id" example:"1"`
-	Recipient  string `json:"recipient" example:"user@example.com"`
-	Content    string `json:"content" example:"Hello, World!"`
-	Status     string `json:"status" example:"sent"`
-	WebhookURL string `json:"webhook_url" example:"https://example.com/webhook"`
-	CreatedAt  string `json:"created_at" example:"2023-01-01T00:00:00Z"`
+	ID         int64   `json:"id" example:"1"`
+	Recipient  string  `json:"recipient" example:"user@example.com"`
+	Content    string  `json:"content" example:"Hello, World!"`
+	Status     string  `json:"status" example:"sent"`
+	WebhookURL string  `json:"webhook_url" example:"https://example.com/webhook"`
+	CreatedAt  string  `json:"created_at" example:"2023-01-01T00:00:00Z"`
 	SentAt     *string `json:"sent_at,omitempty" example:"2023-01-01T00:01:00Z"`
 }
 
@@ -233,7 +233,7 @@ func (s *Server) createMessage(c *gin.Context) {
 	var req CreateMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		s.logger.Error("Invalid request body", "error", err)
-		
+
 		// Check for specific validation errors
 		errorMsg := err.Error()
 		if strings.Contains(errorMsg, "Recipient") {
@@ -248,7 +248,7 @@ func (s *Server) createMessage(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Webhook URL is required"})
 			return
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -283,7 +283,7 @@ func (s *Server) getMessages(c *gin.Context) {
 	// Parse pagination parameters
 	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	
+
 	if offset < 0 {
 		offset = 0
 	}
@@ -357,14 +357,14 @@ func (s *Server) getSentMessages(c *gin.Context) {
 	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	
+
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
 		limit = 10
 	}
-	
+
 	offset := (page - 1) * limit
 
 	messages, total, err := s.messageService.GetSentMessages(c.Request.Context(), offset, limit)

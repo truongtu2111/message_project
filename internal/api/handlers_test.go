@@ -16,14 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// createTestServer creates a test server with all required dependencies
-func createTestServer() *Server {
-	testLogger := logger.New()
-	mockService := new(MockMessageService)
-	mockScheduler := scheduler.NewScheduler(nil, testLogger, scheduler.DefaultConfig())
-	return NewServer(testLogger, mockService, mockScheduler)
-}
-
 // createTestServerWithMock creates a test server with a provided mock service
 func createTestServerWithMock(mockService *MockMessageService) *Server {
 	testLogger := logger.New()
@@ -154,21 +146,21 @@ func TestLoggerMiddleware(t *testing.T) {
 	server.router.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "test"})
 	})
-	
+
 	// Create request
 	req, _ := http.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
-	
+
 	// Perform request
 	server.router.ServeHTTP(w, req)
-	
+
 	// Assert response
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestCreateMessage(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	tests := []struct {
 		name           string
 		requestBody    string
@@ -220,18 +212,18 @@ func TestCreateMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := &MockMessageService{}
 			tt.mockSetup(mockService)
-			
+
 			server := createTestServerWithMock(mockService)
-			
+
 			req, _ := http.NewRequest("POST", "/api/v1/messages", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
-			
+
 			server.router.ServeHTTP(w, req)
-			
+
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.JSONEq(t, tt.expectedBody, w.Body.String())
-			
+
 			mockService.AssertExpectations(t)
 		})
 	}
@@ -239,7 +231,7 @@ func TestCreateMessage(t *testing.T) {
 
 func TestGetMessages(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	tests := []struct {
 		name           string
 		queryParams    string
@@ -285,17 +277,17 @@ func TestGetMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := &MockMessageService{}
 			tt.mockSetup(mockService)
-			
+
 			server := createTestServerWithMock(mockService)
-			
+
 			req, _ := http.NewRequest("GET", "/api/v1/messages"+tt.queryParams, nil)
 			w := httptest.NewRecorder()
-			
+
 			server.router.ServeHTTP(w, req)
-			
+
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.JSONEq(t, tt.expectedBody, w.Body.String())
-			
+
 			mockService.AssertExpectations(t)
 		})
 	}
@@ -303,7 +295,7 @@ func TestGetMessages(t *testing.T) {
 
 func TestGetMessage(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	tests := []struct {
 		name           string
 		messageID      string
@@ -348,17 +340,17 @@ func TestGetMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := &MockMessageService{}
 			tt.mockSetup(mockService)
-			
+
 			server := createTestServerWithMock(mockService)
-			
+
 			req, _ := http.NewRequest("GET", "/api/v1/messages/"+tt.messageID, nil)
 			w := httptest.NewRecorder()
-			
+
 			server.router.ServeHTTP(w, req)
-			
+
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.JSONEq(t, tt.expectedBody, w.Body.String())
-			
+
 			mockService.AssertExpectations(t)
 		})
 	}
@@ -366,7 +358,7 @@ func TestGetMessage(t *testing.T) {
 
 func TestRetryFailedMessages(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	tests := []struct {
 		name           string
 		requestBody    string
@@ -405,18 +397,18 @@ func TestRetryFailedMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := &MockMessageService{}
 			tt.mockSetup(mockService)
-			
+
 			server := createTestServerWithMock(mockService)
-			
+
 			req, _ := http.NewRequest("POST", "/api/v1/messages/retry", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
-			
+
 			server.router.ServeHTTP(w, req)
-			
+
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			assert.JSONEq(t, tt.expectedBody, w.Body.String())
-			
+
 			mockService.AssertExpectations(t)
 		})
 	}
